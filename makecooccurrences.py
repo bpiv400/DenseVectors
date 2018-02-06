@@ -7,7 +7,7 @@ corpus = "reuters.rcv1.tokenized.gz"
 
 # Word frequencies
 freq = defaultdict(int)
-
+asdf
 # Calculate frequencies
 i = 0
 with gzip.open(corpus, "rt", encoding='utf8', errors="ignore") as f:
