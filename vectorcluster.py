@@ -1,8 +1,7 @@
 from gensim.models import KeyedVectors
 import numpy as np
 from sklearn.cluster import KMeans
-import spacy
-nlp = spacy.load('en')
+import Levenshtein
 
 # This maps from word  -> list of candidates
 word2cands = {}
@@ -23,21 +22,54 @@ vec = KeyedVectors.load_word2vec_format("data/coocvec-500mostfreq-window-3.vec.f
 # Load dense vectors (uncomment for question 3)
 # vec = KeyedVectors.load_word2vec_format("data/GoogleNews-vectors-negative300.filter")    
 
+def findClosest(word, cands):
+	minDist = 400
+	ret = ""
+	for val in cands:
+		if val == word: continue
+		if Levenshtein.distance(word, val) < minDist:
+			minDist = Levenshtein.distance(word, val)
+			ret = val
+	return ret
 
+
+filename = "dev_output_features.txt"
+f = open(filename, "w")
+
+j = 0
 for word in word2cands:
 	cands = word2cands[word]
+	numclusters = word2num[word]
+	dic = {}
+	for k in range (1, numclusters + 1):
+		dic[k] = []
+	print(numclusters)
+	print(dic)
+
 	matrix = np.zeros((len(cands), 500))
 	i = 0
 	for val in cands:
 		try:
 			matrix[i, :] = (vec[val])
 		except:
-			matrix[i, :] = (vec[nlp(val)[0].lemma_])
+			print (val)
+			# print (matrix[i, :])
+			continue
+			# matrix[i, :] = (vec[findClosest(val, cands)])
 		i += 1
-	numclusters = word2num[word]
+	
 	kmeans = KMeans(n_clusters = numclusters).fit(matrix)
-	print (kmeans.labels_)
-	matrix = np.zeros()
+	for l in range (0, len(kmeans.labels_)):
+		dic[kmeans.labels_[l] + 1].append(cands[l])
+	for key, value in dic.items():
+		f.write(word + " :: " + str(key) + " :: " + ' '.join(dic[key]) + "\n")
+	# print (dic)
+	# print(word)
+	# print(len(cands))
+	# print(len(kmeans.labels_))
+	j += 1
+
+f.close()
 
 	# TODO: get word vectors from vec
 	# Cluster them with k-means
