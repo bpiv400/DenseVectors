@@ -2,6 +2,9 @@ from gensim.models import KeyedVectors
 import numpy as np
 from sklearn.cluster import KMeans
 import Levenshtein
+import spacy
+from collections import defaultdict
+en_nlp = spacy.load('en')
 
 # This maps from word  -> list of candidates
 word2cands = {}
@@ -17,6 +20,24 @@ with open("data/dev_input.txt") as f:
 		word2num[word] = int(numclus)
 		word2cands[word] = cands
 
+def part_of_speech_features(words_array):
+	words = ''
+	for word in words_array:
+		word = word.trim()
+		words = words + " " + word
+	tags = en_nlp(words)
+	seen_tag_indices = {}
+	tag_counter = 0
+	for i in range(len((tags)):
+		curr_tag = tags[i]_tag
+		if curr_tag not in seen_tags:
+			seen_tag_indices[curr_tag] = tag_counter
+			tag_counter += 1
+	tag_matrix = np.zeros((len(tags), len(seen_tags)))
+	for i in range(leng(tags)):
+		tag_matrix[i, seen_tag_indices[curr_tag]] = 1
+	return tag_matrix
+	
 # Load cooccurrence vectors (question 2)
 vec = KeyedVectors.load_word2vec_format("data/coocvec-500mostfreq-window-3.vec.filter")
 # Load dense vectors (uncomment for question 3)
