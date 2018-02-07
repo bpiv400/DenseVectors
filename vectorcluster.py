@@ -6,42 +6,38 @@ import spacy
 from collections import defaultdict
 en_nlp = spacy.load('en')
 
-# This maps from word  -> list of candidates
-word2cands = {}
-
-# This maps from word  -> number of clusters
-word2num = {}
-
-# Read the words file.
-with open("data/dev_input.txt") as f:
-	for line in f:
-		word, numclus, cands = line.split(" :: ")
-		cands = cands.split()
-		word2num[word] = int(numclus)
-		word2cands[word] = cands
-
 def part_of_speech_features(words_array):
 	words = ''
 	for word in words_array:
-		word = word.trim()
+		word = word.strip()
 		words = words + " " + word
+	words = words.strip()
 	tags = en_nlp(words)
 	seen_tag_indices = {}
 	tag_counter = 0
-	for i in range(len((tags)):
-		curr_tag = tags[i]_tag
-		if curr_tag not in seen_tags:
+	# print('tags starting')
+	for i in range(len(tags)):
+		curr_tag = tags[i].tag_
+		print(curr_tag)
+		if curr_tag not in seen_tag_indices:
 			seen_tag_indices[curr_tag] = tag_counter
 			tag_counter += 1
-	tag_matrix = np.zeros((len(tags), len(seen_tags)))
-	for i in range(leng(tags)):
+	# print(seen_tag_indices)
+	tag_matrix = np.zeros((len(tags), len(seen_tag_indices)))
+	for i in range(len(tags)):
+		curr_tag = tags[i].tag_
 		tag_matrix[i, seen_tag_indices[curr_tag]] = 1
 	return tag_matrix
-	
-# Load cooccurrence vectors (question 2)
-vec = KeyedVectors.load_word2vec_format("data/coocvec-500mostfreq-window-3.vec.filter")
-# Load dense vectors (uncomment for question 3)
-# vec = KeyedVectors.load_word2vec_format("data/GoogleNews-vectors-negative300.filter")    
+
+def part_of_speech_test():
+	test_arr = ['this', 'is', 'a', 'words', 'array', 'made', 'of', 
+	'only', 'the', 'best', 'phrases', 'arrays' 'have' 'to ''offer', 
+	'in', 'the', 'office']
+	test_output = part_of_speech_features(test_arr)
+	print(test_output)
+
+# testing part of speech features
+# part_of_speech_test()
 
 def create_PPMI_matrix(term_context_matrix):
   '''Given a term context matrix, output a PPMI matrix.
@@ -96,6 +92,25 @@ def findClosest(word, cands):
 			ret = val
 	return ret
 
+'''
+# This maps from word  -> list of candidates
+word2cands = {}
+
+# This maps from word  -> number of clusters
+word2num = {}
+
+# Read the words file.
+with open("data/dev_input.txt") as f:
+	for line in f:
+		word, numclus, cands = line.split(" :: ")
+		cands = cands.split()
+		word2num[word] = int(numclus)
+		word2cands[word] = cands
+
+# Load cooccurrence vectors (question 2)
+vec = KeyedVectors.load_word2vec_format("data/coocvec-500mostfreq-window-3.vec.filter")
+# Load dense vectors (uncomment for question 3)
+# vec = KeyedVectors.load_word2vec_format("data/GoogleNews-vectors-negative300.filter")    
 
 filename = "dev_output_features.txt"
 f = open(filename, "w")
@@ -138,4 +153,4 @@ f.close()
 	# TODO: get word vectors from vec
 	# Cluster them with k-means
 	# Write the clusters to file.
-
+'''
