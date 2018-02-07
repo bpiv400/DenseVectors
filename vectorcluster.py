@@ -45,47 +45,45 @@ def part_of_speech_test():
 # part_of_speech_test()
 
 def create_PPMI_matrix(term_context_matrix):
-  '''Given a term context matrix, output a PPMI matrix.
-  
-  See section 15.1 in the textbook.
-  
-  Hint: Use numpy matrix and vector operations to speed up implementation.
-  
-  Input:
-    term_context_matrix: A nxn numpy array, where n is
-        the numer of tokens in the vocab.
-  
-  Returns: A nxn numpy matrix, where A_ij is equal to the
-     point-wise mutual information between the ith word
-     and the jth word in the term_context_matrix.
-  '''
-def create_PPMI_matrix(term_context_matrix):
-  def divide_array(matrix_array, marginal_array):
-    return matrix_array - marginal_array
+	def divide_array(matrix_array, marginal_array):
+		return matrix_array - marginal_array
+	
+	term_context_matrix = term_context_matrix + pow(10, -3)
+	
+	#print(str(term_context_matrix))
+	context_sum = np.sum(term_context_matrix, axis=0)
+	#print(context_sum)
+	word_sum = np.sum(term_context_matrix, axis=1)
+	#print(word_sum) 	
+	
+	total_sum1 = np.sum(context_sum)
+	
+	context_sum = np.log2(context_sum/total_sum1)
+	word_sum = np.log2(word_sum / total_sum1)
 
-  #print(str(term_context_matrix))
-  context_sum = np.sum(term_context_matrix, axis=0)
-  #print(context_sum)
+	term_context_matrix = np.log2(term_context_matrix / total_sum1)
 
-  word_sum = np.sum(term_context_matrix, axis=1)
-  #print(word_sum) 
+	term_context_matrix = np.apply_along_axis(divide_array, 1, term_context_matrix, context_sum) 
+	term_context_matrix = np.apply_along_axis(divide_array, 0, term_context_matrix, word_sum)
+	term_context_matrix = np.clip(term_context_matrix, 0, None)
+	return term_context_matrix
 
-  total_sum1 = np.sum(context_sum)
-  total_sum2 = np.sum(word_sum)
 
-  context_sum = np.log2(context_sum)
-  word_sum = np.log2(word_sum)
+def create_norm_matrix(term_context_matrix):
+	def divide_array(matrix_array, marginal_array):
+		return matrix_array / marginal_array
+	
+	term_context_matrix = term_context_matrix + 1
+	
+	#print(str(term_context_matrix))
 
-  total_sum1 = np.log2(total_sum1)
-  total_sum2 = np.log2(total_sum2) 
+	#print(context_sum)
+	word_sum = np.sum(term_context_matrix, axis=1)
+	#print(word_sum) 	
 
-  term_context_matrix = np.log2(term_context_matrix)
-  term_context_matrix = term_context_matrix + total_sum1
-
-  term_context_matrix = np.apply_along_axis(divide_array, 1, term_context_matrix, context_sum) 
-  term_context_matrix = np.apply_along_axis(divide_array, 0, term_context_matrix, word_sum)
-  term_context_matrix = np.clip(term_context_matrix, 0, None)
-  return term_context_matrix
+	term_context_matrix = np.apply_along_axis(divide_array, 0, term_context_matrix, word_sum)
+	term_context_matrix = np.clip(term_context_matrix, 0, None)
+	return term_context_matrix
 
 def findClosest(word, cands):
 	minDist = 400
@@ -97,6 +95,12 @@ def findClosest(word, cands):
 			ret = val
 	return ret
 
+def create_sim_matrix(matrix):
+	
+
+def weight_pos(pos_features, matrix):
+	row_mean = np.mean(matrix)
+	return row_mean * pos_features
 
 # This maps from word  -> list of candidates
 word2cands = {}
@@ -105,7 +109,7 @@ word2cands = {}
 word2num = {}
 
 # Read the words file.
-with open("data/dev_input.txt") as f:
+with open("data/test_input.txt") as f:
 	for line in f:
 		word, numclus, cands = line.split(" :: ")
 		cands = cands.split()
@@ -118,7 +122,7 @@ vec = KeyedVectors.load_word2vec_format("data/coocvec-500mostfreq-window-3.vec.f
 # Load dense vectors (uncomment for question 3)
 # vec = KeyedVectors.load_word2vec_format("data/GoogleNews-vectors-negative300.filter")    
 
-filename = "dev_output_features.txt"
+filename = "test_output_features.txt"
 f = open(filename, "w")
 
 j = 0
@@ -142,16 +146,8 @@ for word in word2cands:
 			continue
 			# matrix[i, :] = (vec[findClosest(val, cands)])
 		i += 1
-	# y_dim_matrix = matrix.shape[1]
-	# x_dim_pos_features = pos_features.shape[0]
-	# x_dim_matrix = matrix.shape[0]
-	# y_dim_pos_features = pos_features.shape[1]
-	# print("X_Matrix " + str(x_dim_matrix))
-	# print("X_features " + str(x_dim_pos_features))
-	# print("y_features " + str(y_dim_pos_features))
-	# print("y_Matrix " + str(y_dim_matrix))
-	matrix = np.append(matrix, pos_features, axis=1)
-	print(str(matrix.max()))
+	matrix = np.append(matrix, weight_pos(pos_features, matrix), axis=1)
+	# print(str(matrix.max()))
 	
 	kmeans = KMeans(n_clusters = numclusters).fit(matrix)
 	for l in range (0, len(kmeans.labels_)):
