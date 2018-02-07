@@ -22,6 +22,49 @@ vec = KeyedVectors.load_word2vec_format("data/coocvec-500mostfreq-window-3.vec.f
 # Load dense vectors (uncomment for question 3)
 # vec = KeyedVectors.load_word2vec_format("data/GoogleNews-vectors-negative300.filter")    
 
+def create_PPMI_matrix(term_context_matrix):
+  '''Given a term context matrix, output a PPMI matrix.
+  
+  See section 15.1 in the textbook.
+  
+  Hint: Use numpy matrix and vector operations to speed up implementation.
+  
+  Input:
+    term_context_matrix: A nxn numpy array, where n is
+        the numer of tokens in the vocab.
+  
+  Returns: A nxn numpy matrix, where A_ij is equal to the
+     point-wise mutual information between the ith word
+     and the jth word in the term_context_matrix.
+  '''
+def create_PPMI_matrix(term_context_matrix):
+  def divide_array(matrix_array, marginal_array):
+    return matrix_array - marginal_array
+
+  print(str(term_context_matrix))
+  context_sum = np.sum(term_context_matrix, axis=0)
+  print(context_sum)
+
+  word_sum = np.sum(term_context_matrix, axis=1)
+  print(word_sum) 
+
+  total_sum1 = np.sum(context_sum)
+  total_sum2 = np.sum(word_sum)
+
+  context_sum = np.log2(context_sum)
+  word_sum = np.log2(word_sum)
+
+  total_sum1 = np.log2(total_sum1)
+  total_sum2 = np.log2(total_sum2) 
+
+  term_context_matrix = np.log2(term_context_matrix)
+  term_context_matrix = term_context_matrix + total_sum1
+
+  term_context_matrix = np.apply_along_axis(divide_array, 1, term_context_matrix, context_sum) 
+  term_context_matrix = np.apply_along_axis(divide_array, 0, term_context_matrix, word_sum)
+  term_context_matrix = np.clip(term_context_matrix, 0, None)
+  return term_context_matrix
+
 def findClosest(word, cands):
 	minDist = 400
 	ret = ""
