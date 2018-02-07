@@ -92,7 +92,7 @@ def findClosest(word, cands):
 			ret = val
 	return ret
 
-'''
+
 # This maps from word  -> list of candidates
 word2cands = {}
 
@@ -106,6 +106,7 @@ with open("data/dev_input.txt") as f:
 		cands = cands.split()
 		word2num[word] = int(numclus)
 		word2cands[word] = cands
+
 
 # Load cooccurrence vectors (question 2)
 vec = KeyedVectors.load_word2vec_format("data/coocvec-500mostfreq-window-3.vec.filter")
@@ -124,7 +125,7 @@ for word in word2cands:
 		dic[k] = []
 	print(numclusters)
 	print(dic)
-
+	pos_features = part_of_speech_features(cands)
 	matrix = np.zeros((len(cands), 500))
 	i = 0
 	for val in cands:
@@ -136,6 +137,7 @@ for word in word2cands:
 			continue
 			# matrix[i, :] = (vec[findClosest(val, cands)])
 		i += 1
+	matrix = np.append(matrix, pos_features, axis=1)
 	
 	kmeans = KMeans(n_clusters = numclusters).fit(matrix)
 	for l in range (0, len(kmeans.labels_)):
@@ -153,4 +155,3 @@ f.close()
 	# TODO: get word vectors from vec
 	# Cluster them with k-means
 	# Write the clusters to file.
-'''
