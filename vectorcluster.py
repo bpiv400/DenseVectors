@@ -5,6 +5,8 @@ import Levenshtein
 import spacy
 from collections import defaultdict
 import re
+from sklearn.cluster import spectral_clustering
+import math
 
 en_nlp = spacy.load('en')
 def part_of_speech_features(words_array):
@@ -68,6 +70,28 @@ def create_PPMI_matrix(term_context_matrix):
 	term_context_matrix = np.clip(term_context_matrix, 0, None)
 	return term_context_matrix
 
+def compute_cosine_similarity(vector1, vector2):
+	'''Computes the cosine similarity of the two input vectors.
+
+	Inputs:
+	  vector1: A nx1 numpy array
+	  vector2: A nx1 numpy array
+
+	eturns:
+	  A scalar similarity value.
+	'''
+  
+	products = vector1 * vector2
+
+	vector1 = np.square(vector1)
+	vector2 = np.square(vector2)
+
+	mag1 = sqrt(np.sum(vector1))
+	mag2 = sqrt(np.sum(vector2))
+
+	mags = mag1 * mag2
+
+	return np.sum(products)/mags
 
 def create_norm_matrix(term_context_matrix):
 	def divide_array(matrix_array, marginal_array):
@@ -96,7 +120,20 @@ def findClosest(word, cands):
 	return ret
 
 def create_sim_matrix(matrix):
-	
+	def get_mag(row_vector):
+		row_vector = np.square(row_vector)
+		row_vector = math.sqrt(np.sum(row_vector))
+		return row_vector
+	def divide_by_mag(mat_vector, mag_vector):
+		return mat_vector / mag_vector
+
+	trans_matrix = matrix.transpose()
+	sim_matrix = np.matmul(matrix, trans_matrix)
+	magnitudes = np.apply_along_axis(get_mag, 1, matrix)
+	sim_matrix = np.apply_along_axis(divide_by_mag, 1, sim_matrix, magnitudes)
+	sim_matrix = np.apply_along_axis(divide_by_mag, 0, sim_matrix, magnitudes)
+	return sim_matrix
+
 
 def weight_pos(pos_features, matrix):
 	row_mean = np.mean(matrix)
@@ -109,7 +146,7 @@ word2cands = {}
 word2num = {}
 
 # Read the words file.
-with open("data/test_input.txt") as f:
+with open("data/dev_input.txt") as f:
 	for line in f:
 		word, numclus, cands = line.split(" :: ")
 		cands = cands.split()
@@ -122,9 +159,8 @@ vec = KeyedVectors.load_word2vec_format("data/coocvec-500mostfreq-window-3.vec.f
 # Load dense vectors (uncomment for question 3)
 # vec = KeyedVectors.load_word2vec_format("data/GoogleNews-vectors-negative300.filter")    
 
-filename = "test_output_features.txt"
+filename = "dev_output_features.txt"
 f = open(filename, "w")
-
 j = 0
 for word in word2cands:
 	cands = word2cands[word]
@@ -148,8 +184,10 @@ for word in word2cands:
 		i += 1
 	matrix = np.append(matrix, weight_pos(pos_features, matrix), axis=1)
 	# print(str(matrix.max()))
-	
+	matrix = create_sim_matrix(matrix)
+	matrix = 1 - matrix
 	kmeans = KMeans(n_clusters = numclusters).fit(matrix)
+	# kmeans = spectral_clustering(matrix, n_clusters=numclusters)
 	for l in range (0, len(kmeans.labels_)):
 		dic[kmeans.labels_[l] + 1].append(cands[l])
 	for key, value in dic.items():
