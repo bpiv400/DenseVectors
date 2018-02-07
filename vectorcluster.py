@@ -4,21 +4,26 @@ from sklearn.cluster import KMeans
 import Levenshtein
 import spacy
 from collections import defaultdict
-en_nlp = spacy.load('en')
+import re
 
+en_nlp = spacy.load('en')
 def part_of_speech_features(words_array):
-	words = ''
+	tags = []
 	for word in words_array:
 		word = word.strip()
-		words = words + " " + word
-	words = words.strip()
-	tags = en_nlp(words)
+		if bool(re.search(r'-', word)):
+			word = word.split('-')
+			word = word[0]
+		curr_tag = en_nlp(word)
+		curr_tag = curr_tag[0]
+		tags.append(curr_tag)
+	#print("Tags: " + str(len(tags)))
 	seen_tag_indices = {}
 	tag_counter = 0
 	# print('tags starting')
 	for i in range(len(tags)):
 		curr_tag = tags[i].tag_
-		print(curr_tag)
+		# print(curr_tag)
 		if curr_tag not in seen_tag_indices:
 			seen_tag_indices[curr_tag] = tag_counter
 			tag_counter += 1
@@ -58,12 +63,12 @@ def create_PPMI_matrix(term_context_matrix):
   def divide_array(matrix_array, marginal_array):
     return matrix_array - marginal_array
 
-  print(str(term_context_matrix))
+  #print(str(term_context_matrix))
   context_sum = np.sum(term_context_matrix, axis=0)
-  print(context_sum)
+  #print(context_sum)
 
   word_sum = np.sum(term_context_matrix, axis=1)
-  print(word_sum) 
+  #print(word_sum) 
 
   total_sum1 = np.sum(context_sum)
   total_sum2 = np.sum(word_sum)
@@ -123,21 +128,30 @@ for word in word2cands:
 	dic = {}
 	for k in range (1, numclusters + 1):
 		dic[k] = []
-	print(numclusters)
-	print(dic)
 	pos_features = part_of_speech_features(cands)
+	#print(len(cands))
+	#for cand in cands: 
+	#	print(cand)
 	matrix = np.zeros((len(cands), 500))
 	i = 0
 	for val in cands:
 		try:
 			matrix[i, :] = (vec[val])
 		except:
-			print (val)
 			# print (matrix[i, :])
 			continue
 			# matrix[i, :] = (vec[findClosest(val, cands)])
 		i += 1
+	# y_dim_matrix = matrix.shape[1]
+	# x_dim_pos_features = pos_features.shape[0]
+	# x_dim_matrix = matrix.shape[0]
+	# y_dim_pos_features = pos_features.shape[1]
+	# print("X_Matrix " + str(x_dim_matrix))
+	# print("X_features " + str(x_dim_pos_features))
+	# print("y_features " + str(y_dim_pos_features))
+	# print("y_Matrix " + str(y_dim_matrix))
 	matrix = np.append(matrix, pos_features, axis=1)
+	print(str(matrix.max()))
 	
 	kmeans = KMeans(n_clusters = numclusters).fit(matrix)
 	for l in range (0, len(kmeans.labels_)):
